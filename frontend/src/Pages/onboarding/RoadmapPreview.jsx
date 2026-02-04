@@ -14,7 +14,7 @@
 //   const [profile, setProfile] = useState(null);
 
 //   useEffect(() => {
-//     // ✅ Load AI-generated profile from localStorage
+//     // Load AI-generated profile from localStorage
 //     const stored = localStorage.getItem("skillSynapseProfile");
 
 //     if (stored) {
@@ -38,7 +38,6 @@
 //     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white px-6 py-12">
 //       <div className="max-w-4xl mx-auto">
 
-//         {/* ================= HEADER ================= */}
 //         <div className="flex items-center gap-3 mb-8">
 //           <Brain className="w-9 h-9 text-gray-200" />
 //           <div>
@@ -51,7 +50,6 @@
 //           </div>
 //         </div>
 
-//         {/* ================= MAIN CARD ================= */}
 //         <div className="p-8 rounded-3xl bg-white/5 border border-white/10 shadow-xl backdrop-blur-md">
 
 //           {/* Track + Level */}
@@ -116,7 +114,6 @@
 //             </p>
 //           </div>
 
-//           {/* CTA Button */}
 //           <button
 //             onClick={handleStartAssessment}
 //             className="mt-10 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-gray-200 text-black font-semibold hover:bg-gray-300 transition"
@@ -135,7 +132,6 @@
 //   );
 // }
 
-// /* ================= INFO CARD COMPONENT ================= */
 // function InfoCard({ icon, title, value }) {
 //   return (
 //     <div className="p-6 rounded-3xl bg-black/30 border border-white/10 flex items-start gap-4">
@@ -164,7 +160,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-// --- MOCK DATA FOR PREVIEW ---
+// Mock Data for previewing the roadmap
 const MOCK_PROFILE = {
   track: "Full-Stack Web Development (MERN)",
   level: "Intermediate",
@@ -211,7 +207,6 @@ export default function RoadmapPreview() {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white px-6 py-12">
       <div className="max-w-4xl mx-auto">
 
-        {/* ================= HEADER ================= */}
         <div className="flex items-center gap-4 mb-10">
           <div className="p-3 bg-white/10 rounded-2xl">
             <Brain className="w-8 h-8 text-gray-100" />
@@ -226,7 +221,6 @@ export default function RoadmapPreview() {
           </div>
         </div>
 
-        {/* ================= MAIN CARD ================= */}
         <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 shadow-2xl backdrop-blur-xl">
 
           {/* Track + Level */}
@@ -306,7 +300,6 @@ export default function RoadmapPreview() {
   );
 }
 
-/* ================= INFO CARD COMPONENT ================= */
 function InfoCard({ icon, title, value }) {
   return (
     <div className="p-6 rounded-3xl bg-black/20 border border-white/5 flex items-center gap-5 hover:border-white/20 transition-colors">

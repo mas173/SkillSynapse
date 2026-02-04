@@ -1,17 +1,12 @@
 import {
-  ShieldCheck,
   Mail,
   FileText,
   Github,
   Code2,
 } from "lucide-react";
 import logo from '/logo.png';
-import { useNavigate } from "react-router-dom";
 
 const Footer = () => {
-
-  const navigate = () => useNavigate();
-
   return (
     <footer className="bg-slate-900 text-gray-400 border-t bottom-0 border-slate-800">
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -54,7 +49,7 @@ const Footer = () => {
                   <Code2 size={16} /> API Docs
                 </li>
                 <li className="hover:text-white cursor-pointer">
-                  <a href="" target="blank" className="flex items-center gap-2 "><Github size={16} /> GitHub</a>
+                  <a href="https://github.com/Ankita15k/SkillSynapse.git" target="blank" className="flex items-center gap-2 "><Github size={16} /> GitHub</a>
                 </li>
               </ul>
             </div>
@@ -78,10 +73,6 @@ const Footer = () => {
         {/* BOTTOM BAR */}
         <div className="border-t border-slate-700 mt-12 pt-6 flex flex-col md:flex-row gap-3 justify-center items-center text-sm text-gray-400">
           <p>© {new Date().getFullYear()} SkillSynapse. All rights reserved.</p>
-          {/* <p className="mt-3 md:mt-0 flex items-center gap-2">
-            <ShieldCheck size={14} />
-            Built with privacy-first architecture
-          </p> */}
         </div>
       </div>
     </footer>

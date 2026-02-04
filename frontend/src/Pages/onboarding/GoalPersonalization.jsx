@@ -55,10 +55,10 @@ export default function GoalPersonalization() {
 
       console.log("AI Personalization Result:", data);
 
-      // ✅ Store result (temporary)
+      // Store result (temporary)
       localStorage.setItem("skillSynapseProfile", JSON.stringify(data));
 
-      // ✅ Navigate to Roadmap Preview screen (next step)
+      // Navigate to Roadmap Preview screen (next step)
       navigate("/onboarding/roadmap");
     } catch (err) {
       setError(err.message);
@@ -71,7 +71,6 @@ export default function GoalPersonalization() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white px-6">
       <div className="w-full max-w-2xl p-10 rounded-3xl bg-white/5 border border-white/10 shadow-xl backdrop-blur-md">
 
-        {/* ================= HEADER ================= */}
         <div className="flex items-center gap-3 mb-6">
           <Brain className="w-8 h-8 text-gray-200" />
           <div>
