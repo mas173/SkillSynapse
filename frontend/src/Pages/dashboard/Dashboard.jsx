@@ -2,9 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Brain,
-  Sparkles,
   BarChart3,
-  Target,
   ArrowRight,
   BookOpen,
   MessageSquareText,

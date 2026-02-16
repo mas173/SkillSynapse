@@ -9,6 +9,7 @@ import RoadmapPreview from "./Pages/onboarding/RoadmapPreview"
 import SkillAssessment from "./Pages/assessment/SkillAssessment"
 import SkillGapReport from "./Pages/assessment/SkillGapReport"
 import Dashboard from "./Pages/dashboard/Dashboard"
+import TutorChat from "./Pages/tutor/Chat"
 
 function App() {
 
@@ -32,7 +33,8 @@ function App() {
         <Route path="/assessment/report" element={<SkillGapReport/>} />
 
         {/* Dashboard */}
-        <Route path="/dashboard" element={<Dashboard/>} /> 
+        <Route path="/dashboard" element={<Dashboard/>} />
+        <Route path="/tutor" element={<TutorChat/>} />
 
       </Routes>
     </>
