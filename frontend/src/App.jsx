@@ -10,6 +10,7 @@ import SkillAssessment from "./Pages/assessment/SkillAssessment"
 import SkillGapReport from "./Pages/assessment/SkillGapReport"
 import Dashboard from "./Pages/dashboard/Dashboard"
 import TutorChat from "./Pages/tutor/Chat"
+import Roadmap from "./Pages/dashboard/Roadmap"
 
 function App() {
 
@@ -34,6 +35,7 @@ function App() {
 
         {/* Dashboard */}
         <Route path="/dashboard" element={<Dashboard/>} />
+        <Route path="/roadmap" element={<Roadmap/>} />
         <Route path="/tutor" element={<TutorChat/>} />
 
       </Routes>
