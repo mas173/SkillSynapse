@@ -50,7 +50,6 @@ export default function GoalPersonalization() {
     navigate("/onboarding/roadmap");
 
   } catch (err) {
-    // 3. Axios errors are slightly different, they live in err.response
     const errorMessage = err.response?.data?.message || "AI personalization failed. Try again.";
     setError(errorMessage);
   } finally {

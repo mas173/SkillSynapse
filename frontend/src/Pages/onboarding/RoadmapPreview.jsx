@@ -29,7 +29,7 @@ export default function RoadmapPreview() {
             headers: {
               "Content-Type": "application/json",
             },
-            credentials: "include", // if using cookies/JWT
+            credentials: "include",
           }
         );
 
