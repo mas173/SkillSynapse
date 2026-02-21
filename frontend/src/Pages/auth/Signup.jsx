@@ -24,7 +24,7 @@ export default function Signup() {
     try {
       setLoading(true);
       await emailSignup(name.trim(), email.trim(), password);
-      navigate("/onboarding");
+      navigate("/onboarding/goal");
     } catch (err) {
       setError(err?.message || "Signup failed. Please try again.");
     } finally {
@@ -38,7 +38,7 @@ export default function Signup() {
     try {
       setGoogleLoading(true);
       await googleLogin();
-      navigate("/onboarding");
+      navigate("/onboarding/goal");
     } catch (err) {
       setError(err?.message || "Google sign in failed. Please try again.");
     } finally {

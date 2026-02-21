@@ -35,7 +35,7 @@ export default function Login() {
 
       if (data.success && data.user) {
         setUserCookie(data.user);
-        navigate("/onboarding");
+        navigate("/onboarding/goal");
       }
     } catch (err) {
       const msg =
@@ -57,7 +57,7 @@ export default function Login() {
 
       if (data.success && data.user) {
         setUserCookie(data.user);
-        navigate("/onboarding");
+        navigate("/onboarding/goal");
       }
     } catch (err) {
       const msg =
