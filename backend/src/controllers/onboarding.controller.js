@@ -53,10 +53,7 @@ export const generateQuickRoadmap = async (req, res) => {
     const onboarding = await Onboarding.findOne({ user: req.user._id });
 
     if (!onboarding || !onboarding.goal) {
-      return res.status(400).json({
-        success: false,
-        message: "Goal not found. Please complete goal first.",
-      });
+      return res.status(400).json({ success: false, message: "Goal not found." });
     }
 
     const aiRoadmap = await generateQuickRoadmapAI({
@@ -68,17 +65,15 @@ export const generateQuickRoadmap = async (req, res) => {
     onboarding.quickRoadmap = aiRoadmap;
     await onboarding.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Quick roadmap generated successfully",
-      data: aiRoadmap,
-    });
+    res.status(200).json({ success: true, data: aiRoadmap });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to generate roadmap",
-      error: error.message,
-    });
+    if (error.message.includes("quota") || error.message.includes("429")) {
+      return res.status(429).json({
+        success: false,
+        message: "AI service is currently at capacity. Please try again in 30 seconds."
+      });
+    }
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -161,6 +156,7 @@ export const generateFinalResult = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Final Result Error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to generate final result",

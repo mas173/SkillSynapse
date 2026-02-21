@@ -8,6 +8,7 @@ import {
   CheckCircle,
   Loader2,
 } from "lucide-react";
+import axiosInstance from "../../services/axios/axios";
 
 export default function RoadmapPreview() {
   const navigate = useNavigate();
@@ -17,37 +18,30 @@ export default function RoadmapPreview() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchRoadmap() {
-      try {
-        setLoading(true);
-        setError("");
+  async function fetchRoadmap() {
+    try {
+      setLoading(true);
+      setError("");
+      const res = await axiosInstance.post("/onboarding/roadmap");
 
-        const res = await fetch(
-          "http://localhost:3000/api/onboarding/roadmap",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-          }
-        );
+      const aiData = res.data.data.json;
 
-        if (!res.ok) {
-          throw new Error("Failed to load roadmap.");
-        }
-
-        const data = await res.json();
-        setProfile(data);
-      } catch (err) {
-        setError(err.message || "Something went wrong.");
-      } finally {
-        setLoading(false);
-      }
+      setProfile({
+        track: aiData.summary,
+        level: aiData.estimatedCompletion,
+        focusAreas: aiData.roadmap.map((item) => item.phase),
+        planDuration: aiData.estimatedCompletion,
+      });
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to load roadmap.";
+      setError(msg);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    fetchRoadmap();
-  }, []);
+  fetchRoadmap();
+}, []);
 
   function handleStartAssessment() {
     navigate("/assessment");

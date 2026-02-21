@@ -6,9 +6,8 @@ const genAI = new GoogleGenAI({
 
 export const generateText = async (prompt) => {
   const response = await genAI.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: prompt,
+    model: "gemini-2.5-flash",
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
   });
-
   return response.text;
 };

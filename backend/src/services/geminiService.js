@@ -1,4 +1,4 @@
-import {generateText} from "../config/gemini.js";
+import { generateText } from "../config/gemini.js";
 
 function extractJSON(text) {
   try {
@@ -6,6 +6,7 @@ function extractJSON(text) {
     if (!jsonMatch) throw new Error("No JSON found in response");
     return JSON.parse(jsonMatch[0]);
   } catch (error) {
+    console.error("Raw text that failed parsing:", text);
     throw new Error("AI response parsing failed");
   }
 }
@@ -18,11 +19,8 @@ export const generateQuickRoadmap = async ({
 }) => {
   const prompt = `
 You are an expert career mentor.
-
 Create a structured learning roadmap.
-
 Return ONLY valid JSON in this format:
-
 {
   "summary": "short summary",
   "roadmap": [
@@ -41,10 +39,7 @@ User Goal: ${goal}
 Experience Level: ${experienceLevel}
 Timeline: ${timeline}
 `;
-
-  const result = await generateText.generateContent(prompt);
-  const text = result.response.text();
-
+  const text = await generateText(prompt);
   const jsonData = extractJSON(text);
 
   return {
@@ -53,13 +48,11 @@ Timeline: ${timeline}
   };
 };
 
-//Assessment analysis
+// Assessment analysis
 export const generateAssessmentResult = async ({ goal, answers }) => {
   const prompt = `
 You are a technical evaluator.
-
 Analyze the user's assessment answers and return ONLY valid JSON:
-
 {
   "strengths": ["..."],
   "weaknesses": ["..."],
@@ -71,9 +64,7 @@ Goal: ${goal}
 Answers: ${JSON.stringify(answers)}
 `;
 
-  const result = await generateText.generateContent(prompt);
-  const text = result.response.text();
-
+  const text = await generateText(prompt);
   const jsonData = extractJSON(text);
 
   return {
@@ -82,7 +73,7 @@ Answers: ${JSON.stringify(answers)}
   };
 };
 
-//Generate final personalized roadmap based on goal, experience, timeline, assessment answers and analysis
+// Generate final personalized roadmap
 export const generateFinalRoadmap = async ({
   goal,
   experienceLevel,
@@ -92,11 +83,8 @@ export const generateFinalRoadmap = async ({
 }) => {
   const prompt = `
 You are a senior AI career architect.
-
 Using the assessment analysis, generate a personalized roadmap.
-
 Return ONLY valid JSON:
-
 {
   "summary": "personalized summary",
   "skillGapFocus": ["skill1", "skill2"],
@@ -119,9 +107,7 @@ Assessment Answers: ${JSON.stringify(answers)}
 Assessment Analysis: ${JSON.stringify(analysis)}
 `;
 
-  const result = await generateText.generateContent(prompt);
-  const text = result.response.text();
-
+  const text = await generateText(prompt);
   const jsonData = extractJSON(text);
 
   return {
