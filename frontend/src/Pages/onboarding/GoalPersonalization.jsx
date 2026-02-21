@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Brain, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import axiosInstance from "../../services/axios/axios";
 
 export default function GoalPersonalization() {
   const navigate = useNavigate();
@@ -8,6 +9,8 @@ export default function GoalPersonalization() {
   const [goal, setGoal] = useState("");
   const [style, setStyle] = useState("Step-by-step");
   const [timePerDay, setTimePerDay] = useState("30 min/day");
+  const [experienceLevel, setExperienceLevel] = useState("Beginner");
+  const [preferredLanguage, setPreferredLanguage] = useState("English");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -20,56 +23,44 @@ export default function GoalPersonalization() {
   ];
 
   const timeOptions = ["15 min/day", "30 min/day", "1 hr/day", "2 hr/day"];
+  const experienceOptions = ["Beginner", "Intermediate", "Advanced"];
+  const languageOptions = ["English", "Hindi", "Spanish", "French"];
 
   async function handlePersonalize() {
-    if (!goal.trim()) {
-      setError("Please write your learning goal or description.");
-      return;
-    }
-
-    setError("");
-    setLoading(true);
-
-    try {
-      // ✅ Send goal to backend AI personalization endpoint
-      const res = await fetch(
-        "http://localhost:5000/api/onboarding/personalize",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            goal,
-            preferredStyle: style,
-            dailyTime: timePerDay,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("AI personalization failed. Try again.");
-      }
-
-      const data = await res.json();
-
-      console.log("AI Personalization Result:", data);
-
-      // Store result (temporary)
-      localStorage.setItem("skillSynapseProfile", JSON.stringify(data));
-
-      // Navigate to Roadmap Preview screen (next step)
-      navigate("/onboarding/roadmap");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  if (!goal.trim()) {
+    setError("Please write your learning goal or description.");
+    return;
   }
+
+  setError("");
+  setLoading(true);
+
+  try {
+    const res = await axiosInstance.post("/onboarding/goal", {
+      goal,
+      preferredStyle: style,
+      timeline: timePerDay,
+      experienceLevel,          
+      preferredLanguage,        
+    });
+
+    const data = res.data;
+
+    console.log("AI Personalization Result:", data);
+    navigate("/onboarding/roadmap");
+
+  } catch (err) {
+    // 3. Axios errors are slightly different, they live in err.response
+    const errorMessage = err.response?.data?.message || "AI personalization failed. Try again.";
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white px-6">
-      <div className="w-full max-w-2xl p-10 rounded-3xl bg-white/5 border border-white/10 shadow-xl backdrop-blur-md">
+      <div className="w-full mt-12 mb-12 max-w-2xl p-10 rounded-3xl bg-white/5 border border-white/10 shadow-xl backdrop-blur-md">
 
         <div className="flex items-center gap-3 mb-6">
           <Brain className="w-8 h-8 text-gray-200" />
@@ -90,6 +81,7 @@ export default function GoalPersonalization() {
           </p>
         </div>
 
+        {/* GOAL */}
         <div>
           <label className="text-sm text-gray-300 font-medium">
             Your Learning Goal / Description
@@ -104,6 +96,55 @@ export default function GoalPersonalization() {
           />
         </div>
 
+        <div className="flex gap-10">
+          {/* EXPERIENCE LEVEL */}
+          <div className="mt-8">
+            <label className="text-sm text-gray-300 font-medium">
+              Experience Level
+            </label>
+
+            <div className="mt-3 flex flex-wrap gap-3">
+              {experienceOptions.map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setExperienceLevel(lvl)}
+                  className={`px-4 py-2 rounded-2xl border text-sm transition ${
+                    experienceLevel === lvl
+                      ? "bg-white/10 border-gray-300 text-white"
+                      : "bg-black/20 border-white/10 text-gray-400 hover:text-gray-200"
+                  }`}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* PREFERRED LANGUAGE */}
+          <div className="mt-8">
+            <label className="text-sm text-gray-300 font-medium block">
+              Preferred Language
+            </label>
+
+            <select
+              value={preferredLanguage}
+              onChange={(e) => setPreferredLanguage(e.target.value)}
+              className="mt-3 w-full px-4 py-2 rounded-2xl border bg-black/20 border-white/10 text-gray-200 focus:outline-none focus:ring-2 focus:ring-white/20"
+            >
+              {languageOptions.map((lang) => (
+                <option
+                  key={lang}
+                  value={lang}
+                  className="bg-gray-900 text-white"
+                >
+                  {lang}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* EXISTING STYLE */}
         <div className="mt-8">
           <label className="text-sm text-gray-300 font-medium">
             Preferred Learning Style
@@ -126,6 +167,7 @@ export default function GoalPersonalization() {
           </div>
         </div>
 
+        {/* TIME */}
         <div className="mt-8">
           <label className="text-sm text-gray-300 font-medium">
             Daily Time Commitment

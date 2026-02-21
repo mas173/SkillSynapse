@@ -1,8 +1,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 import AuthRouter from "./routes/auth.route.js";
 import connectDB from "./config/db.js";
+import router from "./routes/onboarding.route.js";
 
 dotenv.config();
 
@@ -10,6 +12,7 @@ const app = express();
 
 // MIDDLEWARE
 app.use(express.json());
+app.use(cookieParser());
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -19,6 +22,7 @@ app.use(
 
 //  ROUTES
 app.use("/api/auth", AuthRouter);
+app.use("/api/onboarding", router);
 
 
 const PORT = process.env.PORT ||3000;
