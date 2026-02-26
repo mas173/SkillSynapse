@@ -1,61 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Brain,
-  ArrowRight,
-  CheckCircle,
-  Loader2,
-} from "lucide-react";
+import { Brain, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
+import axiosInstance from "../../services/axios/axios";
+import LoadingScreen from "../../Components/common/Loader";
 
 export default function SkillAssessment() {
   const navigate = useNavigate();
 
-  // Sample MVP Questions (Later: load dynamically from backend)
-  const questions = [
-    {
-      id: 1,
-      question: "What does HTML stand for?",
-      options: [
-        "HyperText Markup Language",
-        "High Transfer Machine Language",
-        "Hyper Trainer Marking Language",
-        "Home Tool Markup Language",
-      ],
-      answer: 0,
-    },
-    {
-      id: 2,
-      question: "Which of these is a JavaScript framework?",
-      options: ["Django", "React", "Laravel", "Flask"],
-      answer: 1,
-    },
-    {
-      id: 3,
-      question: "What is the purpose of a database index?",
-      options: [
-        "To slow down queries",
-        "To store images",
-        "To improve query performance",
-        "To delete unused data",
-      ],
-      answer: 2,
-    },
-    {
-      id: 4,
-      question: "Which data structure works on FIFO?",
-      options: ["Stack", "Queue", "Tree", "Graph"],
-      answer: 1,
-    },
-  ];
-
+  const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState(null);
   const [answers, setAnswers] = useState([]);
 
   const [loading, setLoading] = useState(false);
+  const [fetchingQuestions, setFetchingQuestions] = useState(true);
   const [error, setError] = useState("");
 
-  const progress = Math.round(((current + 1) / questions.length) * 100);
+  // Fetch dynamic questions from Gemini via backend
+  useEffect(() => {
+    async function fetchQuestions() {
+      try {
+        setFetchingQuestions(true);
+        const res = await axiosInstance.get("/onboarding/questions");
+        if (res.data.success && res.data.data?.questions) {
+          setQuestions(res.data.data.questions);
+        } else {
+          setError("Failed to load questions.");
+        }
+      } catch (err) {
+        const msg =
+          err?.response?.data?.message ||
+          "Failed to generate questions. Please try again.";
+        setError(msg);
+      } finally {
+        setFetchingQuestions(false);
+      }
+    }
+    fetchQuestions();
+  }, []);
+
+  const progress =
+    questions.length > 0
+      ? Math.round(((current + 1) / questions.length) * 100)
+      : 0;
 
   function handleNext() {
     if (selected === null) {
@@ -69,7 +56,9 @@ export default function SkillAssessment() {
       ...answers,
       {
         questionId: questions[current].id,
+        question: questions[current].question,
         selectedOption: selected,
+        correctAnswer: questions[current].answer,
       },
     ];
 
@@ -88,43 +77,53 @@ export default function SkillAssessment() {
 
     try {
       // Submit assessment answers to backend
-      const res = await fetch(
-        process.env.BACKEND_URL + "/assessment/submit",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            answers: finalAnswers,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Assessment submission failed.");
-      }
-
-      const data = await res.json();
-
-      console.log("Assessment Result:", data);
-
-      // Save skill gap report temporarily
-      localStorage.setItem("skillGapReport", JSON.stringify(data));
+      await axiosInstance.post("/onboarding/assessment", {
+        answers: finalAnswers,
+      });
 
       // Navigate to Skill Gap Report screen
       navigate("/assessment/report");
     } catch (err) {
-      setError(err.message);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Assessment submission failed.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
   }
 
+  // Loading state while fetching questions
+  if (fetchingQuestions) {
+    return (
+      <LoadingScreen
+        title="Generating Assessment..."
+        subtitle="AI is creating personalized questions based on your goal"
+      />
+    );
+  }
+
+  // Error state if questions failed to load
+  if (error && questions.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-gray-300 px-6">
+        <div className="p-8 rounded-3xl bg-white/5 border border-red-500/20 max-w-md text-center">
+          <p className="text-red-400 font-medium">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 px-6 py-3 rounded-2xl bg-gray-200 text-black font-semibold hover:bg-gray-300 transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white px-6 py-12">
       <div className="max-w-3xl mx-auto">
-
         {/* HEADER */}
         <div className="flex items-center gap-3 mb-8">
           <Brain className="w-9 h-9 text-gray-200" />
@@ -148,7 +147,6 @@ export default function SkillAssessment() {
 
         {/* QUESTION CARD */}
         <div className="p-8 rounded-3xl bg-white/5 border border-white/10 shadow-xl backdrop-blur-md">
-
           {/* Question */}
           <h2 className="text-xl font-semibold text-slate-100">
             Question {current + 1} of {questions.length}

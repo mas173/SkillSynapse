@@ -32,12 +32,22 @@ const onboardingSchema = new mongoose.Schema(
       json: Object,
       formatted: String,
     },
+    confidenceScore: {
+      type: Number,
+      default: 0,
+    },
+    confidenceHistory: [
+      {
+        score: { type: Number, required: true },
+        date: { type: Date, default: Date.now },
+      },
+    ],
     isCompleted: {
       type: Boolean,
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Onboarding = mongoose.model("Onboarding", onboardingSchema);

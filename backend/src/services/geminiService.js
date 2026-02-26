@@ -115,3 +115,37 @@ Assessment Analysis: ${JSON.stringify(analysis)}
     formatted: text,
   };
 };
+
+// Generate dynamic assessment questions based on user goal
+export const generateAssessmentQuestions = async ({
+  goal,
+  experienceLevel,
+}) => {
+  const prompt = `
+You are an expert technical assessor.
+Generate exactly 6 multiple-choice questions to assess a learner's current knowledge.
+Each question should have 4 options with exactly one correct answer.
+Questions should range from basic to intermediate based on the experience level.
+Return ONLY valid JSON in this format:
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Question text here?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": 0
+    }
+  ]
+}
+
+User Goal: ${goal}
+Experience Level: ${experienceLevel}
+`;
+  const text = await generateText(prompt);
+  const jsonData = extractJSON(text);
+
+  return {
+    json: jsonData,
+    formatted: text,
+  };
+};

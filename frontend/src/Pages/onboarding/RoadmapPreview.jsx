@@ -18,30 +18,30 @@ export default function RoadmapPreview() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-  async function fetchRoadmap() {
-    try {
-      setLoading(true);
-      setError("");
-      const res = await axiosInstance.post("/onboarding/roadmap");
+    async function fetchRoadmap() {
+      try {
+        setLoading(true);
+        setError("");
+        const res = await axiosInstance.post("/onboarding/roadmap");
 
-      const aiData = res.data.data.json;
+        const aiData = res.data.data.json;
 
-      setProfile({
-        track: aiData.summary,
-        level: aiData.estimatedCompletion,
-        focusAreas: aiData.roadmap.map((item) => item.phase),
-        planDuration: aiData.estimatedCompletion,
-      });
-    } catch (err) {
-      const msg = err.response?.data?.message || "Failed to load roadmap.";
-      setError(msg);
-    } finally {
-      setLoading(false);
+        setProfile({
+          track: aiData.summary,
+          level: aiData.estimatedCompletion,
+          focusAreas: aiData.roadmap.map((item) => item.phase),
+          planDuration: aiData.estimatedCompletion,
+        });
+      } catch (err) {
+        const msg = err.response?.data?.message || "Failed to load roadmap.";
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  fetchRoadmap();
-}, []);
+    fetchRoadmap();
+  }, []);
 
   function handleStartAssessment() {
     navigate("/assessment");
@@ -79,7 +79,6 @@ export default function RoadmapPreview() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white px-6 py-12">
       <div className="max-w-4xl mx-auto">
-
         {/* Header */}
         <div className="flex items-center gap-4 mb-10">
           <div className="p-3 bg-white/10 rounded-2xl">
@@ -90,13 +89,13 @@ export default function RoadmapPreview() {
               Your Personalized Roadmap
             </h1>
             <p className="text-sm text-gray-400">
-              Generated using your goal, experience level, and learning preferences.
+              Generated using your goal, experience level, and learning
+              preferences.
             </p>
           </div>
         </div>
 
         <div className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 shadow-2xl backdrop-blur-xl">
-
           {/* Track + Level */}
           <div className="grid md:grid-cols-2 gap-6">
             <InfoCard
@@ -150,9 +149,10 @@ export default function RoadmapPreview() {
               Why this roadmap?
             </h3>
             <p className="mt-3 text-sm text-gray-400 leading-relaxed">
-              This roadmap is structured based on prerequisite dependency mapping,
-              estimated learning velocity, and your selected experience level.
-              Topics are ordered to minimize cognitive overload and maximize retention.
+              This roadmap is structured based on prerequisite dependency
+              mapping, estimated learning velocity, and your selected experience
+              level. Topics are ordered to minimize cognitive overload and
+              maximize retention.
             </p>
           </div>
 
@@ -172,7 +172,6 @@ export default function RoadmapPreview() {
     </div>
   );
 }
-
 
 function InfoCard({ icon, title, value }) {
   return (

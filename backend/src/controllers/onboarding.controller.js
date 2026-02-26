@@ -4,6 +4,7 @@ import {
   generateQuickRoadmap as generateQuickRoadmapAI,
   generateAssessmentResult,
   generateFinalRoadmap,
+  generateAssessmentQuestions as generateQuestionsAI,
 } from "../services/geminiService.js";
 
 /* POST /api/onboarding/goal */
@@ -130,6 +131,23 @@ export const generateFinalResult = async (req, res) => {
       });
     }
 
+    // Calculate actual confidence score from answers
+    const answers = onboarding.assessmentAnswers;
+    let correctCount = 0;
+    let totalCount = 0;
+
+    if (Array.isArray(answers)) {
+      totalCount = answers.length;
+      answers.forEach((a) => {
+        if (a.selectedOption === a.correctAnswer) {
+          correctCount++;
+        }
+      });
+    }
+
+    const calculatedScore =
+      totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+
     // Generate AI Result Summary
     const resultAnalysis = await generateAssessmentResult({
       goal: onboarding.goal,
@@ -147,7 +165,14 @@ export const generateFinalResult = async (req, res) => {
 
     onboarding.resultAnalysis = resultAnalysis;
     onboarding.finalRoadmap = finalRoadmap;
+    onboarding.confidenceScore = calculatedScore;
     onboarding.isCompleted = true;
+
+    // Push to confidence history for graph tracking
+    onboarding.confidenceHistory.push({
+      score: calculatedScore,
+      date: new Date(),
+    });
 
     await onboarding.save();
 
@@ -160,6 +185,9 @@ export const generateFinalResult = async (req, res) => {
       data: {
         resultAnalysis,
         finalRoadmap,
+        confidenceScore: calculatedScore,
+        correctCount,
+        totalCount,
       },
     });
   } catch (error) {
@@ -167,6 +195,77 @@ export const generateFinalResult = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to generate final result",
+      error: error.message,
+    });
+  }
+};
+
+/* GET /api/onboarding/questions */
+export const generateQuestions = async (req, res) => {
+  try {
+    const onboarding = await Onboarding.findOne({ user: req.user._id });
+
+    if (!onboarding || !onboarding.goal) {
+      return res.status(400).json({
+        success: false,
+        message: "Please complete goal setup first.",
+      });
+    }
+
+    const result = await generateQuestionsAI({
+      goal: onboarding.goal,
+      experienceLevel: onboarding.experienceLevel || "Beginner",
+    });
+
+    res.status(200).json({
+      success: true,
+      data: result.json,
+    });
+  } catch (error) {
+    console.error("Question Generation Error:", error);
+    if (error.message.includes("quota") || error.message.includes("429")) {
+      return res.status(429).json({
+        success: false,
+        message: "AI service is at capacity. Please try again in 30 seconds.",
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate questions",
+      error: error.message,
+    });
+  }
+};
+
+/* GET /api/onboarding/data */
+export const getUserOnboardingData = async (req, res) => {
+  try {
+    const onboarding = await Onboarding.findOne({ user: req.user._id });
+
+    if (!onboarding) {
+      return res.status(404).json({
+        success: false,
+        message: "No onboarding data found.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        goal: onboarding.goal,
+        experienceLevel: onboarding.experienceLevel,
+        timeline: onboarding.timeline,
+        resultAnalysis: onboarding.resultAnalysis,
+        finalRoadmap: onboarding.finalRoadmap,
+        confidenceScore: onboarding.confidenceScore,
+        confidenceHistory: onboarding.confidenceHistory,
+        isCompleted: onboarding.isCompleted,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch onboarding data",
       error: error.message,
     });
   }

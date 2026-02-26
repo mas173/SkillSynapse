@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import HomePage from "./Pages/home/Homepage";
 import Login from "./Pages/auth/Login";
 import Signup from "./Pages/auth/Signup";
@@ -14,6 +14,26 @@ import Roadmap from "./Pages/dashboard/Roadmap";
 import ProtectedRoute from "./Components/common/ProtectedRoute";
 import PublicOnlyRoute from "./Components/common/PublicOnlyRoute";
 import useAuthStore from "./store/useAuthStore";
+import LoadingScreen from "./Components/common/Loader";
+
+// Guard: only allow dashboard access if user is onboarded
+function OnboardedRoute({ children }) {
+  const { isAuthenticated, isOnboarded, loading } = useAuthStore();
+
+  if (loading) {
+    return <LoadingScreen title="Loading..." subtitle="Please wait" />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isOnboarded) {
+    return <Navigate to="/onboarding/goal" replace />;
+  }
+
+  return children;
+}
 
 function App() {
   const checkAuth = useAuthStore((s) => s.checkAuth);
@@ -62,6 +82,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Assessment — protected (accessible from onboarding flow + dashboard re-assessment) */}
+        <Route
+          path="/assessment"
+          element={
+            <ProtectedRoute>
+              <SkillAssessment />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/onboarding/assessment"
           element={
@@ -79,29 +109,35 @@ function App() {
           }
         />
 
-        {/* Dashboard — protected */}
+        {/* Dashboard — protected + must be onboarded */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+            <OnboardedRoute>
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            </OnboardedRoute>
           }
         />
         <Route
           path="/roadmap"
           element={
-            <ProtectedRoute>
-              <Roadmap />
-            </ProtectedRoute>
+            <OnboardedRoute>
+              <ProtectedRoute>
+                <Roadmap />
+              </ProtectedRoute>
+            </OnboardedRoute>
           }
         />
         <Route
           path="/tutor"
           element={
-            <ProtectedRoute>
-              <TutorChat />
-            </ProtectedRoute>
+            <OnboardedRoute>
+              <ProtectedRoute>
+                <TutorChat />
+              </ProtectedRoute>
+            </OnboardedRoute>
           }
         />
 
