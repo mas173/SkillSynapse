@@ -21,12 +21,10 @@ export const emailLogin = async (req, res) => {
 
     // check if user signed up with Google (no password)
     if (!user.password) {
-      return res
-        .status(401)
-        .json({
-          message:
-            "This account uses Google sign-in. Please use Google to log in.",
-        });
+      return res.status(401).json({
+        message:
+          "This account uses Google sign-in. Please use Google to log in.",
+      });
     }
 
     // compare password
@@ -56,6 +54,7 @@ export const emailLogin = async (req, res) => {
         name: user.name,
         email: user.email,
         photo: user.photo,
+        isOnboarded: user.isOnboarded || false,
       },
     });
   } catch (error) {

@@ -3,7 +3,6 @@ import User from "../../models/user.js";
 import jwt from "jsonwebtoken";
 import user from "../../models/user.js";
 
-
 export const googleSignup = async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -34,7 +33,7 @@ export const googleSignup = async (req, res) => {
     const appToken = jwt.sign(
       { id: existingUser._id },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     // Set cookie
@@ -53,6 +52,7 @@ export const googleSignup = async (req, res) => {
         name: existingUser.name,
         email: existingUser.email,
         photo: existingUser.photo,
+        isOnboarded: existingUser.isOnboarded || false,
       },
     });
   } catch (error) {

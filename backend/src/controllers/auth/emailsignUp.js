@@ -30,11 +30,9 @@ export const emailSignup = async (req, res) => {
     });
 
     // create JWT
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
 
     res.cookie("token", token, {
       httpOnly: true,
@@ -43,7 +41,6 @@ export const emailSignup = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-  
     return res.status(201).json({
       success: true,
       user: {
@@ -52,6 +49,7 @@ export const emailSignup = async (req, res) => {
         email: user.email,
         photo: user.photo,
         provider: user.provider,
+        isOnboarded: false,
       },
     });
   } catch (error) {

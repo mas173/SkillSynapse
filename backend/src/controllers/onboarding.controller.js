@@ -1,4 +1,5 @@
 import Onboarding from "../models/onboarding.js";
+import User from "../models/user.js";
 import {
   generateQuickRoadmap as generateQuickRoadmapAI,
   generateAssessmentResult,
@@ -53,7 +54,9 @@ export const generateQuickRoadmap = async (req, res) => {
     const onboarding = await Onboarding.findOne({ user: req.user._id });
 
     if (!onboarding || !onboarding.goal) {
-      return res.status(400).json({ success: false, message: "Goal not found." });
+      return res
+        .status(400)
+        .json({ success: false, message: "Goal not found." });
     }
 
     const aiRoadmap = await generateQuickRoadmapAI({
@@ -70,7 +73,8 @@ export const generateQuickRoadmap = async (req, res) => {
     if (error.message.includes("quota") || error.message.includes("429")) {
       return res.status(429).json({
         success: false,
-        message: "AI service is currently at capacity. Please try again in 30 seconds."
+        message:
+          "AI service is currently at capacity. Please try again in 30 seconds.",
       });
     }
     res.status(500).json({ success: false, error: error.message });
@@ -146,6 +150,9 @@ export const generateFinalResult = async (req, res) => {
     onboarding.isCompleted = true;
 
     await onboarding.save();
+
+    // Mark user as onboarded so they skip onboarding on next login
+    await User.findByIdAndUpdate(req.user._id, { isOnboarded: true });
 
     res.status(200).json({
       success: true,

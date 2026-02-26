@@ -6,9 +6,9 @@ const userSchema = new mongoose.Schema(
     email: { type: String, unique: true },
     password: String,
     photo: String,
-    
+    isOnboarded: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("User", userSchema);
