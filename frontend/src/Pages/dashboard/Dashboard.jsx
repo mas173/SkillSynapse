@@ -4,17 +4,17 @@ import {
   Brain,
   BarChart3,
   ArrowRight,
-  BookOpen,
-  MessageSquareText,
-  RefreshCcw,
+  Plus,
+  Target,
+  Trophy,
+  Flame,
+  ClipboardCheck,
+  TrendingUp,
+  CheckCircle2,
+  Clock,
   BrainCircuit,
-  FileText,
-  ListCheck,
-  LocateFixed,
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -31,18 +31,22 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
-  const [onboardingData, setOnboardingData] = useState(null);
+  const [goals, setGoals] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function fetchDashboardData() {
+  async function fetchDashboard() {
     try {
       setLoading(true);
       setError("");
-      const res = await axiosInstance.get("/onboarding/data");
-      if (res.data.success && res.data.data) {
-        setOnboardingData(res.data.data);
-      }
+      const [goalsRes, statsRes] = await Promise.all([
+        axiosInstance.get("/onboarding/goals"),
+        axiosInstance.get("/onboarding/stats"),
+      ]);
+
+      if (goalsRes.data.success) setGoals(goalsRes.data.data);
+      if (statsRes.data.success) setStats(statsRes.data.data);
     } catch (err) {
       setError(err?.response?.data?.message || "Unable to load dashboard.");
     } finally {
@@ -51,27 +55,19 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboard();
   }, []);
 
-  // Derived data
-  const analysis = onboardingData?.resultAnalysis?.json || {};
-  const roadmap = onboardingData?.finalRoadmap?.json || {};
-  const goal = onboardingData?.goal || "Personalized Learning";
-  const level =
-    analysis.skillLevel || onboardingData?.experienceLevel || "Beginner";
-  const confidenceScore = onboardingData?.confidenceScore ?? 0;
-  const strengths = analysis.strengths || [];
-  const weakSkills = analysis.weaknesses || [];
-  const skillGapFocus = roadmap.skillGapFocus || [];
-  const roadmapPhases = roadmap.roadmap || [];
   const userName = user?.name || "Learner";
+  const activeGoals = goals.filter((g) => g.status === "active");
+  const completedGoals = goals.filter((g) => g.status === "completed");
 
-  // Confidence history for graph
-  const confidenceHistory = useMemo(() => {
-    const history = onboardingData?.confidenceHistory || [];
-    return history.map((entry) => ({
+  // Format combined history for graph
+  const chartData = useMemo(() => {
+    if (!stats?.combinedHistory) return [];
+    return stats.combinedHistory.map((entry) => ({
       score: entry.score,
+      goal: entry.goal,
       date: new Date(entry.date).toLocaleDateString("en-IN", {
         day: "numeric",
         month: "short",
@@ -84,51 +80,23 @@ export default function Dashboard() {
         minute: "2-digit",
       }),
     }));
-  }, [onboardingData]);
+  }, [stats]);
 
-  // Next Steps
-  const nextSteps = useMemo(() => {
-    const steps = [];
-    if (weakSkills.length > 0) {
-      steps.push({
-        title: `Fix: ${weakSkills[0]}`,
-        desc: "Start guided learning with hints.",
-        action: () => navigate("/tutor"),
-        cta: "Open AI Tutor",
-      });
-    }
-    if (skillGapFocus.length > 0) {
-      steps.push({
-        title: `Focus: ${skillGapFocus[0]}`,
-        desc: "Follow your AI-generated roadmap.",
-        action: () => navigate("/roadmap"),
-        cta: "View Roadmap",
-      });
-    }
-    steps.push({
-      title: "Take a revision quiz",
-      desc: "Boost your confidence score.",
-      action: () => navigate("/assessment"),
-      cta: "Start Quiz",
-    });
-    return steps.slice(0, 3);
-  }, [weakSkills, skillGapFocus, navigate]);
+  function handleAddGoal() {
+    sessionStorage.setItem("goalFlow", "dashboard");
+    sessionStorage.removeItem("currentGoalId");
+    navigate("/onboarding/goal");
+  }
 
-  function handleGoTutor() {
-    navigate("/tutor");
-  }
-  function handleGoAssessment() {
-    navigate("/assessment");
-  }
-  function handleGoRoadmap() {
-    navigate("/roadmap");
+  function handleGoalClick(goalId) {
+    navigate(`/dashboard/goal/${goalId}`);
   }
 
   if (loading) {
     return (
       <LoadingScreen
         title="Loading Dashboard"
-        subtitle="Fetching your progress from SkillSynapse AI"
+        subtitle="Fetching your goals and progress"
       />
     );
   }
@@ -138,20 +106,20 @@ export default function Dashboard() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-white px-6">
         <p className="text-lg font-semibold text-red-400">{error}</p>
         <button
-          onClick={fetchDashboardData}
-          className="mt-6 px-6 py-3 rounded-2xl bg-gray-200 text-black font-semibold flex items-center gap-2 hover:bg-gray-300 transition"
+          onClick={fetchDashboard}
+          className="mt-6 px-6 py-3 rounded-2xl bg-gray-200 text-black font-semibold hover:bg-gray-300 transition"
         >
-          <RefreshCcw size={18} /> Retry
+          Retry
         </button>
       </div>
     );
   }
 
-  // Custom tooltip for the chart
   function CustomTooltip({ active, payload }) {
     if (active && payload && payload.length) {
       return (
         <div className="bg-slate-800 border border-white/10 rounded-xl px-4 py-3 shadow-lg">
+          <p className="text-xs text-gray-400">{payload[0].payload.goal}</p>
           <p className="text-sm text-gray-200 font-medium">
             {payload[0].payload.fullDate}
           </p>
@@ -160,6 +128,27 @@ export default function Dashboard() {
       );
     }
     return null;
+  }
+
+  // Streak flame icons
+  function renderStreak(count) {
+    if (count === 0)
+      return <span className="text-gray-500 text-sm">No streak yet</span>;
+    return (
+      <div className="flex items-center gap-1">
+        {Array.from({ length: Math.min(count, 7) }).map((_, i) => (
+          <Flame
+            key={i}
+            size={16}
+            className="text-orange-400"
+            fill="currentColor"
+          />
+        ))}
+        {count > 7 && (
+          <span className="text-xs text-gray-400 ml-1">+{count - 7}</span>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -177,59 +166,83 @@ export default function Dashboard() {
                 Welcome back, <span className="text-gray-200">{userName}</span>{" "}
                 👋
               </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Goal: {goal} • Level: {level}
-              </p>
             </div>
           </div>
 
           <div className="flex gap-3">
             <button
-              onClick={handleGoTutor}
+              onClick={() => navigate("/tutor")}
               className="px-5 py-3 rounded-2xl bg-gray-200 text-black font-semibold hover:bg-gray-300 transition flex items-center gap-2"
             >
               <BrainCircuit size={18} /> AI Tutor
             </button>
             <button
-              onClick={handleGoAssessment}
+              onClick={handleAddGoal}
               className="px-5 py-3 rounded-2xl border border-white/10 bg-white/5 hover:border-gray-400 transition text-sm flex items-center gap-2"
             >
-              <BarChart3 size={18} /> Re-Assessment
+              <Plus size={18} /> Add New Goal
             </button>
           </div>
         </div>
 
+        {/* STATS ROW */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+            <StatCard
+              icon={<Target size={20} />}
+              label="Total Goals"
+              value={stats.totalGoals}
+            />
+            <StatCard
+              icon={<Clock size={20} />}
+              label="Active"
+              value={stats.activeGoals}
+            />
+            <StatCard
+              icon={<Trophy size={20} />}
+              label="Completed"
+              value={stats.completedGoals}
+            />
+            <StatCard
+              icon={<ClipboardCheck size={20} />}
+              label="Assessments"
+              value={stats.totalAssessments}
+            />
+            <StatCard
+              icon={<TrendingUp size={20} />}
+              label="Avg Score"
+              value={`${stats.averageScore}%`}
+            />
+            <div className="p-5 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
+              <div className="flex items-center gap-2 mb-2">
+                <Flame size={20} className="text-orange-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wide">
+                  Streak
+                </span>
+              </div>
+              <div className="text-2xl font-bold text-gray-100">
+                {stats.activeStreak}{" "}
+                <span className="text-sm font-normal text-gray-500">days</span>
+              </div>
+              <div className="mt-2">{renderStreak(stats.activeStreak)}</div>
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* LEFT SIDE */}
+          {/* LEFT — GRAPH + GOALS */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Confidence Score with Graph */}
+            {/* Overall Progress Graph */}
             <Card>
               <CardHeader
                 icon={<BarChart3 size={18} />}
-                title="Confidence Score"
-                subtitle="Track your progress across assessments"
+                title="Overall Progress"
+                subtitle="Combined confidence scores across all goals"
               />
-
-              <div className="flex items-end justify-between mt-4 mb-2">
-                <div>
-                  <div className="text-4xl font-extrabold text-gray-100">
-                    {confidenceScore}%
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {confidenceHistory.length} assessment
-                    {confidenceHistory.length !== 1 ? "s" : ""} taken
-                  </p>
-                </div>
-                <div className="text-xs text-gray-500">
-                  Level: <span className="text-gray-300">{level}</span>
-                </div>
-              </div>
-
-              {/* Confidence History Graph */}
-              {confidenceHistory.length > 0 ? (
-                <div className="mt-4 h-48 w-full">
+              {chartData.length > 0 ? (
+                <div className="mt-6 h-52 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={confidenceHistory}>
+                    <AreaChart data={chartData}>
                       <defs>
                         <linearGradient
                           id="scoreGradient"
@@ -288,180 +301,160 @@ export default function Dashboard() {
               ) : (
                 <div className="mt-6 p-6 rounded-2xl bg-black/20 border border-white/5 text-center">
                   <p className="text-sm text-gray-500">
-                    Take your first assessment to see your progress graph
+                    Complete an assessment to see your progress graph
                   </p>
                 </div>
               )}
             </Card>
 
-            {/* Strength + Skill Gap side by side */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Strengths */}
-              <Card>
+            {/* Active Goals */}
+            <Card>
+              <div className="flex items-center justify-between mb-6">
                 <CardHeader
-                  icon={<Brain size={18} />}
-                  title="Strengths"
-                  subtitle="Skills you already mastered"
+                  icon={<Target size={18} />}
+                  title="Active Goals"
+                  subtitle={`${activeGoals.length} ongoing goal${activeGoals.length !== 1 ? "s" : ""}`}
                 />
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {strengths.length > 0 ? (
-                    strengths.map((s, i) => (
-                      <span
-                        key={i}
-                        className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-sm"
-                      >
-                        {s}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      Complete an assessment to see strengths
-                    </p>
-                  )}
-                </div>
-              </Card>
+                <button
+                  onClick={handleAddGoal}
+                  className="px-4 py-2 rounded-2xl bg-gray-200 text-black text-sm font-semibold hover:bg-gray-300 transition flex items-center gap-1"
+                >
+                  <Plus size={14} /> New Goal
+                </button>
+              </div>
 
-              {/* Skill Gaps */}
-              <Card>
-                <CardHeader
-                  icon={<LocateFixed size={18} />}
-                  title="Skill Gaps"
-                  subtitle="Areas needing improvement"
-                />
-                <div className="mt-5 flex flex-wrap gap-3">
-                  {weakSkills.length > 0 ? (
-                    weakSkills.map((s, i) => (
-                      <span
-                        key={i}
-                        className="px-4 py-2 rounded-2xl bg-black/30 border border-white/10 text-sm"
-                      >
-                        {s}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      No skill gaps detected 🎉
-                    </p>
-                  )}
+              {activeGoals.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {activeGoals.map((goal) => (
+                    <GoalCard
+                      key={goal._id}
+                      goal={goal}
+                      onClick={() => handleGoalClick(goal._id)}
+                    />
+                  ))}
                 </div>
-              </Card>
-            </div>
+              ) : (
+                <div className="p-8 rounded-2xl bg-black/20 border border-white/5 text-center">
+                  <p className="text-gray-500 mb-4">No active goals yet</p>
+                  <button
+                    onClick={handleAddGoal}
+                    className="px-5 py-3 rounded-2xl bg-gray-200 text-black font-semibold hover:bg-gray-300 transition"
+                  >
+                    Create Your First Goal
+                  </button>
+                </div>
+              )}
+            </Card>
 
-            {/* AI Recommendation */}
-            {analysis.recommendation && (
+            {/* Completed Goals */}
+            {completedGoals.length > 0 && (
               <Card>
                 <CardHeader
-                  icon={<BarChart3 size={18} />}
-                  title="AI Recommendation"
-                  subtitle="Personalized advice from SkillSynapse"
+                  icon={<CheckCircle2 size={18} />}
+                  title="Completed Goals"
+                  subtitle={`${completedGoals.length} goal${completedGoals.length !== 1 ? "s" : ""} achieved`}
                 />
-                <p className="mt-4 text-sm text-gray-300 leading-relaxed">
-                  {analysis.recommendation}
-                </p>
+                <div className="mt-6 space-y-3">
+                  {completedGoals.map((goal) => (
+                    <button
+                      key={goal._id}
+                      onClick={() => handleGoalClick(goal._id)}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5 hover:border-gray-400 transition text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2
+                          size={18}
+                          className="text-green-400 shrink-0"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-gray-200">
+                            {goal.goal}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Score: {goal.confidenceScore}% •{" "}
+                            {goal.completedAt
+                              ? `Completed ${new Date(goal.completedAt).toLocaleDateString()}`
+                              : "Completed"}
+                          </p>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-gray-500" />
+                    </button>
+                  ))}
+                </div>
               </Card>
             )}
-
-            {/* Continue Learning */}
-            <Card>
-              <CardHeader
-                icon={<BookOpen size={18} />}
-                title="Continue Learning"
-                subtitle="Recommended next steps"
-              />
-              <div className="mt-6 grid md:grid-cols-3 gap-4">
-                {nextSteps.map((step, idx) => (
-                  <button
-                    key={idx}
-                    onClick={step.action}
-                    className="p-5 rounded-3xl text-left bg-black/30 border border-white/10 hover:border-gray-400 transition"
-                  >
-                    <h3 className="font-semibold text-slate-100">
-                      {step.title}
-                    </h3>
-                    <p className="mt-2 text-sm text-gray-400">{step.desc}</p>
-                    <div className="mt-4 text-sm text-gray-200 flex items-center gap-2">
-                      {step.cta} <ArrowRight size={16} />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </Card>
           </div>
 
           {/* RIGHT SIDE */}
           <div className="space-y-8">
-            {/* Tutor Card */}
+            {/* Quick Actions */}
             <Card>
               <CardHeader
                 icon={<BrainCircuit size={18} />}
-                title="AI Tutor"
-                subtitle="Explainable step-by-step help"
+                title="Quick Actions"
+                subtitle="Jump back into learning"
               />
-              <p className="mt-6 text-sm text-gray-400">
-                Your tutor adapts to your weak skills and learning goal.
-              </p>
-              <button
-                onClick={handleGoTutor}
-                className="mt-6 w-full px-5 py-3 rounded-2xl flex gap-2 bg-gray-200 text-black font-semibold hover:bg-gray-300 transition"
-              >
-                <MessageSquareText size={18} /> Start Tutor Session
-              </button>
+              <div className="mt-6 space-y-3">
+                <button
+                  onClick={() => navigate("/tutor")}
+                  className="w-full px-5 py-3 rounded-2xl flex items-center gap-2 bg-gray-200 text-black font-semibold hover:bg-gray-300 transition"
+                >
+                  <BrainCircuit size={18} /> Start Tutor Session
+                </button>
+                <button
+                  onClick={handleAddGoal}
+                  className="w-full px-5 py-3 rounded-2xl border border-white/10 bg-white/5 hover:border-gray-400 transition flex items-center gap-2 text-sm"
+                >
+                  <Plus size={18} /> Add New Learning Goal
+                </button>
+              </div>
             </Card>
 
-            {/* Roadmap Card */}
-            <Card>
-              <CardHeader
-                icon={<ListCheck size={18} />}
-                title="Your Roadmap"
-                subtitle="AI-generated personalized path"
-              />
-              {roadmapPhases.length > 0 && (
-                <div className="mt-4 space-y-2">
-                  {roadmapPhases.slice(0, 3).map((phase, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5"
-                    >
-                      <span className="text-sm text-gray-200 truncate mr-2">
-                        {phase.phase}
-                      </span>
-                      <span className="text-xs text-gray-500 shrink-0">
-                        {phase.duration}
-                      </span>
-                    </div>
-                  ))}
-                  {roadmapPhases.length > 3 && (
-                    <p className="text-xs text-gray-500 text-center">
-                      +{roadmapPhases.length - 3} more phases
-                    </p>
-                  )}
-                </div>
-              )}
-              <button
-                onClick={handleGoRoadmap}
-                className="mt-6 w-full px-5 py-3 rounded-2xl border border-white/10 bg-white/5 hover:border-gray-400 transition flex gap-2"
-              >
-                <FileText size={18} /> View Full Roadmap
-              </button>
-            </Card>
-
-            {/* Focus Areas */}
-            {skillGapFocus.length > 0 && (
+            {/* Streak Card */}
+            {stats && (
               <Card>
                 <CardHeader
-                  icon={<LocateFixed size={18} />}
-                  title="Focus Areas"
-                  subtitle="Prioritized by AI analysis"
+                  icon={<Flame size={18} className="text-orange-400" />}
+                  title="Active Streak"
+                  subtitle="Consecutive days of learning"
                 />
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {skillGapFocus.map((s, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1.5 rounded-xl bg-black/30 border border-white/10 text-xs text-gray-300"
-                    >
-                      {s}
-                    </span>
-                  ))}
+                <div className="mt-6 text-center">
+                  <div className="text-5xl font-extrabold text-gray-100">
+                    {stats.activeStreak}
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">
+                    day{stats.activeStreak !== 1 ? "s" : ""} in a row
+                  </p>
+                  <div className="mt-4 flex justify-center">
+                    {renderStreak(stats.activeStreak)}
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {/* At a Glance */}
+            {stats && (
+              <Card>
+                <CardHeader
+                  icon={<BarChart3 size={18} />}
+                  title="At a Glance"
+                  subtitle="Your learning stats"
+                />
+                <div className="mt-6 space-y-4">
+                  <GlanceStat
+                    label="Total Assessments"
+                    value={stats.totalAssessments}
+                  />
+                  <GlanceStat
+                    label="Average Score"
+                    value={`${stats.averageScore}%`}
+                  />
+                  <GlanceStat label="Goals Created" value={stats.totalGoals} />
+                  <GlanceStat
+                    label="Goals Completed"
+                    value={stats.completedGoals}
+                  />
                 </div>
               </Card>
             )}
@@ -475,6 +468,8 @@ export default function Dashboard() {
     </div>
   );
 }
+
+// ── Sub-components ────────────────────────────────────────────────
 
 function Card({ children }) {
   return (
@@ -494,6 +489,68 @@ function CardHeader({ icon, title, subtitle }) {
         <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
         <p className="text-sm text-gray-400">{subtitle}</p>
       </div>
+    </div>
+  );
+}
+
+function StatCard({ icon, label, value }) {
+  return (
+    <div className="p-5 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-md">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-gray-400">{icon}</span>
+        <span className="text-xs text-gray-400 uppercase tracking-wide">
+          {label}
+        </span>
+      </div>
+      <div className="text-2xl font-bold text-gray-100">{value}</div>
+    </div>
+  );
+}
+
+function GoalCard({ goal, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-left p-6 rounded-3xl bg-black/30 border border-white/10 hover:border-gray-400 transition w-full"
+    >
+      <h3 className="font-semibold text-slate-100 text-base mb-2 line-clamp-2">
+        {goal.goal}
+      </h3>
+      <div className="flex items-center justify-between mt-3">
+        <div>
+          <span className="text-xs text-gray-500 uppercase">
+            {goal.experienceLevel}
+          </span>
+          <div className="mt-1">
+            <span className="text-xl font-bold text-gray-200">
+              {goal.confidenceScore}%
+            </span>
+            <span className="text-xs text-gray-500 ml-1">confidence</span>
+          </div>
+        </div>
+        <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-white/5 border border-white/10">
+          <ArrowRight size={18} className="text-gray-400" />
+        </div>
+      </div>
+      {/* Mini progress bar */}
+      <div className="mt-3 w-full h-2 bg-black/30 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-gray-300 transition-all"
+          style={{ width: `${goal.confidenceScore}%` }}
+        />
+      </div>
+      <p className="mt-2 text-xs text-gray-500">
+        Created {new Date(goal.createdAt).toLocaleDateString()}
+      </p>
+    </button>
+  );
+}
+
+function GlanceStat({ label, value }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-gray-400">{label}</span>
+      <span className="text-sm font-semibold text-gray-200">{value}</span>
     </div>
   );
 }

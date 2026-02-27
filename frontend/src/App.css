@@ -13,7 +13,351 @@
   animation: fade-in 0.2s ease-out;
 }
 
-/*  SkillSynapse Loading Animations  */
+/* ──────────────────────────────────────────────────────
+   SkillSynapse — Premium Loading Screen
+   All CSS-only for maximum mobile performance
+   ────────────────────────────────────────────────────── */
+
+/* Layout */
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #020617 0%, #18181b 50%, #0a0a0a 100%);
+  color: white;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-content {
+  width: 100%;
+  max-width: 26rem;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+  animation: fadeSlideUp 0.8s ease-out;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Floating Particles ─────────────────────────────── */
+.loading-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.loading-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  will-change: transform, opacity;
+}
+
+.particle-0 {
+  width: 100px;
+  height: 100px;
+  top: 10%;
+  left: 15%;
+  animation: floatParticle 8s ease-in-out infinite;
+}
+
+.particle-1 {
+  width: 60px;
+  height: 60px;
+  top: 65%;
+  right: 10%;
+  animation: floatParticle 10s ease-in-out infinite 1s;
+}
+
+.particle-2 {
+  width: 80px;
+  height: 80px;
+  bottom: 15%;
+  left: 8%;
+  animation: floatParticle 9s ease-in-out infinite 2s;
+}
+
+.particle-3 {
+  width: 50px;
+  height: 50px;
+  top: 30%;
+  right: 20%;
+  animation: floatParticle 7s ease-in-out infinite 0.5s;
+}
+
+.particle-4 {
+  width: 40px;
+  height: 40px;
+  top: 80%;
+  left: 40%;
+  animation: floatParticle 11s ease-in-out infinite 3s;
+}
+
+.particle-5 {
+  width: 70px;
+  height: 70px;
+  top: 5%;
+  right: 35%;
+  animation: floatParticle 8s ease-in-out infinite 1.5s;
+}
+
+@keyframes floatParticle {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-30px) scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+/* ── Brain Orb ──────────────────────────────────────── */
+.loading-orb-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 2rem;
+}
+
+/* Rings */
+.loading-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+}
+
+.loading-ring-outer {
+  inset: -10px;
+  border-top-color: rgba(255, 255, 255, 0.15);
+  border-right-color: rgba(255, 255, 255, 0.05);
+  animation: ringRotate 3s linear infinite;
+}
+
+.loading-ring-mid {
+  inset: 2px;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  border-left-color: rgba(255, 255, 255, 0.04);
+  animation: ringRotate 2.2s linear infinite reverse;
+}
+
+@keyframes ringRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Glow */
+.loading-glow {
+  position: absolute;
+  inset: 15px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 70%
+  );
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* Brain Icon */
+.loading-brain-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+  animation: brainFloat 2.5s ease-in-out infinite;
+}
+
+@keyframes brainFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(2deg);
+  }
+  75% {
+    transform: translateY(3px) rotate(-2deg);
+  }
+}
+
+/* Orbiting dots */
+.loading-orbit {
+  position: absolute;
+  inset: -18px;
+  animation: ringRotate 4s linear infinite;
+}
+
+.loading-orbit-2 {
+  animation-duration: 5s;
+  animation-direction: reverse;
+}
+
+.loading-orbit-dot {
+  position: absolute;
+  top: 50%;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+.loading-orbit-dot-2 {
+  left: auto;
+  right: -3px;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Title & Subtitle ───────────────────────────────── */
+.loading-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.loading-subtitle {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-bottom: 2rem;
+}
+
+/* ── Progress Bar ───────────────────────────────────── */
+.loading-bar-track {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.loading-bar-fill {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  border-radius: 2px;
+  animation: barSlide 1.8s ease-in-out infinite;
+}
+
+.loading-bar-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  animation: barSlide 2.4s ease-in-out infinite 0.6s;
+}
+
+@keyframes barSlide {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+/* ── Rotating Tip ───────────────────────────────────── */
+.loading-tip {
+  font-size: 0.8rem;
+  color: #6b7280;
+  min-height: 1.5rem;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s ease;
+  margin-bottom: 2rem;
+}
+
+.tip-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tip-hidden {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/* ── Skeleton Preview ───────────────────────────────── */
+.loading-skeleton-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.loading-skel-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.loading-skel {
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.8s infinite;
+}
 
 @keyframes shimmer {
   0% {
@@ -24,6 +368,49 @@
   }
 }
 
+.loading-skel-sm {
+  flex: 1;
+}
+
+.loading-skel-lg {
+  flex: 2.5;
+}
+
+.loading-skel-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.loading-skel-card {
+  height: 48px;
+  border-radius: 12px;
+}
+
+/* ── Footer ─────────────────────────────────────────── */
+.loading-footer {
+  margin-top: 2.5rem;
+  font-size: 0.7rem;
+  color: #374151;
+  letter-spacing: 0.05em;
+}
+
+/* ── Perf: reduce motion for users who prefer it ──── */
+@media (prefers-reduced-motion: reduce) {
+  .loading-particle,
+  .loading-ring,
+  .loading-glow,
+  .loading-brain-icon,
+  .loading-orbit,
+  .loading-bar-fill,
+  .loading-bar-shine,
+  .loading-skel::after {
+    animation: none !important;
+  }
+}
+
+/* Keep existing animation classes for other components */
 .animate-shimmer {
   animation: shimmer 1.6s infinite;
 }
@@ -41,7 +428,6 @@
   animation: loadingBar 1.4s infinite;
 }
 
-/* Slow spin for AI icon */
 @keyframes spinSlow {
   from {
     transform: rotate(0deg);

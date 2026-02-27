@@ -18,16 +18,9 @@ import {
   X,
 } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+import LoadingScreen from "../../Components/common/Loader";
 
-function LoadingScreen({ title, subtitle }) {
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <p className="text-gray-400 mt-2">{subtitle}</p>
-    </div>
-  );
-}
+const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
 export default function TutorChat() {
   const [profile, setProfile] = useState(null);
@@ -79,8 +72,7 @@ export default function TutorChat() {
           if (data.success) {
             setProfile({ goal: data.data.goal });
             setProgress({
-              weakSkills:
-                data.data.resultAnalysis?.json?.weaknesses || [],
+              weakSkills: data.data.resultAnalysis?.json?.weaknesses || [],
             });
           }
         }
@@ -178,8 +170,8 @@ export default function TutorChat() {
       if (res.ok) {
         setSessions((prev) =>
           prev.map((s) =>
-            s._id === renamingId ? { ...s, title: renameValue.trim() } : s
-          )
+            s._id === renamingId ? { ...s, title: renameValue.trim() } : s,
+          ),
         );
       }
     } catch (err) {
@@ -299,10 +291,14 @@ export default function TutorChat() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white flex">
+    <div
+      style={{ height: "calc(100vh - 4rem)" }}
+      className="bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white flex overflow-hidden"
+    >
       <div
-        className={`${sidebarOpen ? "w-72" : "w-0"
-          } transition-all duration-300 overflow-hidden border-r border-white/10 bg-black/30 flex flex-col`}
+        className={`${
+          sidebarOpen ? "w-72" : "w-0"
+        } transition-all duration-300 overflow-hidden border-r border-white/10 bg-black/30 flex flex-col shrink-0`}
       >
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-300">Chat History</h2>
@@ -325,10 +321,11 @@ export default function TutorChat() {
             <div
               key={s._id}
               onClick={() => loadSession(s._id)}
-              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm flex items-center gap-2 group transition cursor-pointer ${activeSessionId === s._id
-                ? "bg-white/10 text-white"
-                : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
-                }`}
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm flex items-center gap-2 group transition cursor-pointer ${
+                activeSessionId === s._id
+                  ? "bg-white/10 text-white"
+                  : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
+              }`}
             >
               <MessageSquare size={14} className="shrink-0" />
 
@@ -439,7 +436,7 @@ export default function TutorChat() {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6 thin-scrollbar">
           {messages.length === 0 && (
             <div className="flex justify-start">
               <div className="max-w-lg px-5 py-4 rounded-3xl text-sm leading-relaxed whitespace-pre-line bg-white/5 border border-white/10 text-gray-200">
@@ -447,17 +444,45 @@ export default function TutorChat() {
               </div>
             </div>
           )}
-          {messages.map((msg, index) => (
-            <ChatBubble key={index} role={msg.role} content={msg.content} />
-          ))}
+          {messages.map((msg, index) => {
+            // Skip empty assistant message (placeholder while AI is typing)
+            if (msg.role === "assistant" && msg.content === "" && aiTyping)
+              return null;
+            return (
+              <ChatBubble key={index} role={msg.role} content={msg.content} />
+            );
+          })}
 
-          {aiTyping &&
-            messages[messages.length - 1]?.content === "" && (
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
-                <Sparkles className="animate-pulse" size={16} />
-                Tutor is thinking...
+          {aiTyping && (
+            <div className="flex justify-start">
+              <div className="flex items-center gap-3 px-5 py-4 rounded-3xl bg-white/5 border border-white/10">
+                <Brain
+                  size={20}
+                  className="text-gray-300"
+                  style={{ animation: "spin 2.5s linear infinite" }}
+                />
+                <span className="text-sm text-gray-400">Tutor is thinking</span>
+                <span className="flex gap-1">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-gray-400"
+                    style={{ animation: "pulse 1.4s ease-in-out infinite" }}
+                  />
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-gray-400"
+                    style={{
+                      animation: "pulse 1.4s ease-in-out 0.2s infinite",
+                    }}
+                  />
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-gray-400"
+                    style={{
+                      animation: "pulse 1.4s ease-in-out 0.4s infinite",
+                    }}
+                  />
+                </span>
               </div>
-            )}
+            </div>
+          )}
           <div ref={chatEndRef} />
         </div>
 
@@ -534,7 +559,10 @@ function ChatBubble({ role, content }) {
               }
               return (
                 <pre className="bg-black/40 border border-white/10 rounded-xl p-3 overflow-x-auto my-2">
-                  <code className="text-emerald-300 text-xs font-mono" {...props}>
+                  <code
+                    className="text-emerald-300 text-xs font-mono"
+                    {...props}
+                  >
                     {children}
                   </code>
                 </pre>
@@ -544,7 +572,9 @@ function ChatBubble({ role, content }) {
               <h1 className="text-lg font-bold text-white mb-2">{children}</h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-base font-bold text-white mb-2">{children}</h2>
+              <h2 className="text-base font-bold text-white mb-2">
+                {children}
+              </h2>
             ),
             h3: ({ children }) => (
               <h3 className="text-sm font-bold text-white mb-1">{children}</h3>
@@ -566,7 +596,9 @@ function ChatBubble({ role, content }) {
             ),
             table: ({ children }) => (
               <div className="overflow-x-auto my-2">
-                <table className="w-full text-xs border-collapse">{children}</table>
+                <table className="w-full text-xs border-collapse">
+                  {children}
+                </table>
               </div>
             ),
             th: ({ children }) => (
@@ -593,9 +625,10 @@ function ModeButton({ active, icon, label, onClick }) {
     <button
       onClick={onClick}
       className={`px-4 py-2 rounded-2xl text-sm flex items-center gap-2 border transition
-        ${active
-          ? "bg-gray-200 text-black border-gray-200"
-          : "bg-white/5 text-gray-300 border-white/10 hover:border-gray-400"
+        ${
+          active
+            ? "bg-gray-200 text-black border-gray-200"
+            : "bg-white/5 text-gray-300 border-white/10 hover:border-gray-400"
         }`}
     >
       {icon}

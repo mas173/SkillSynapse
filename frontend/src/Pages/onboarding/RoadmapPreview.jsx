@@ -22,9 +22,17 @@ export default function RoadmapPreview() {
       try {
         setLoading(true);
         setError("");
-        const res = await axiosInstance.post("/onboarding/roadmap");
+        const goalId = sessionStorage.getItem("currentGoalId");
+        const res = await axiosInstance.post("/onboarding/roadmap", {
+          goalId: goalId || undefined,
+        });
 
         const aiData = res.data.data.json;
+
+        // Store goalId if returned
+        if (res.data.goalId) {
+          sessionStorage.setItem("currentGoalId", res.data.goalId);
+        }
 
         setProfile({
           track: aiData.summary,
@@ -175,7 +183,7 @@ export default function RoadmapPreview() {
 
 function InfoCard({ icon, title, value }) {
   return (
-    <div className="p-6 rounded-3xl bg-black/20 border border-white/5  hover:border-white/20 transition-colors"> 
+    <div className="p-6 rounded-3xl bg-black/20 border border-white/5  hover:border-white/20 transition-colors">
       <div className="flex items-center gap-3">
         <div className="w-14 h-14 flex items-center justify-center rounded-2xl bg-white/5 text-gray-100 shrink-0">
           {icon}
@@ -185,9 +193,9 @@ function InfoCard({ icon, title, value }) {
             {title}
           </p>
         </div>
-        </div>
+      </div>
       <div className="mt-4">
-         <h3 className="text-sm font-medium text-gray-500 tracking-wide">
+        <h3 className="text-sm font-medium text-gray-500 tracking-wide">
           {value}
         </h3>
       </div>

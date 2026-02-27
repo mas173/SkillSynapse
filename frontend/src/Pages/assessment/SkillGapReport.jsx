@@ -27,7 +27,10 @@ export default function SkillGapReport() {
       try {
         setLoading(true);
         setError("");
-        const res = await axiosInstance.post("/onboarding/result");
+        const goalId = sessionStorage.getItem("currentGoalId");
+        const res = await axiosInstance.post("/onboarding/result", {
+          goalId: goalId || undefined,
+        });
 
         if (res.data.success && res.data.data) {
           const analysis = res.data.data.resultAnalysis?.json || {};
@@ -35,6 +38,11 @@ export default function SkillGapReport() {
           const score = res.data.data.confidenceScore ?? 0;
           const correct = res.data.data.correctCount ?? 0;
           const total = res.data.data.totalCount ?? 0;
+
+          // Store goalId if returned
+          if (res.data.goalId) {
+            sessionStorage.setItem("currentGoalId", res.data.goalId);
+          }
 
           setReport({
             confidenceScore: score,
@@ -66,6 +74,8 @@ export default function SkillGapReport() {
     if (user) {
       setUser({ ...user, isOnboarded: true });
     }
+    // Clean up flow tracking
+    sessionStorage.removeItem("goalFlow");
     navigate("/dashboard");
   }
 

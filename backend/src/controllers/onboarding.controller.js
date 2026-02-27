@@ -19,28 +19,22 @@ export const saveGoal = async (req, res) => {
       });
     }
 
-    let onboarding = await Onboarding.findOne({ user: req.user._id });
-
-    if (!onboarding) {
-      onboarding = await Onboarding.create({
-        user: req.user._id,
-        goal,
-        experienceLevel,
-        timeline,
-      });
-    } else {
-      onboarding.goal = goal;
-      onboarding.experienceLevel = experienceLevel;
-      onboarding.timeline = timeline;
-      await onboarding.save();
-    }
+    // Always create a new goal (multi-goal support)
+    const onboarding = await Onboarding.create({
+      user: req.user._id,
+      goal,
+      experienceLevel,
+      timeline,
+    });
 
     res.status(200).json({
       success: true,
       message: "Goal saved successfully",
       data: onboarding,
+      goalId: onboarding._id,
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       success: false,
       message: "Failed to save goal",
@@ -52,7 +46,11 @@ export const saveGoal = async (req, res) => {
 /* POST /api/onboarding/roadmap */
 export const generateQuickRoadmap = async (req, res) => {
   try {
-    const onboarding = await Onboarding.findOne({ user: req.user._id });
+    const goalId = req.body.goalId || req.query.goalId;
+    const query = goalId
+      ? { _id: goalId, user: req.user._id }
+      : { user: req.user._id };
+    const onboarding = await Onboarding.findOne(query).sort({ createdAt: -1 });
 
     if (!onboarding || !onboarding.goal) {
       return res
@@ -69,7 +67,9 @@ export const generateQuickRoadmap = async (req, res) => {
     onboarding.quickRoadmap = aiRoadmap;
     await onboarding.save();
 
-    res.status(200).json({ success: true, data: aiRoadmap });
+    res
+      .status(200)
+      .json({ success: true, data: aiRoadmap, goalId: onboarding._id });
   } catch (error) {
     if (error.message.includes("quota") || error.message.includes("429")) {
       return res.status(429).json({
@@ -85,7 +85,7 @@ export const generateQuickRoadmap = async (req, res) => {
 /* POST /api/onboarding/assessment */
 export const submitAssessment = async (req, res) => {
   try {
-    const { answers } = req.body;
+    const { answers, goalId } = req.body;
 
     if (!answers) {
       return res.status(400).json({
@@ -94,7 +94,10 @@ export const submitAssessment = async (req, res) => {
       });
     }
 
-    const onboarding = await Onboarding.findOne({ user: req.user._id });
+    const query = goalId
+      ? { _id: goalId, user: req.user._id }
+      : { user: req.user._id };
+    const onboarding = await Onboarding.findOne(query).sort({ createdAt: -1 });
 
     if (!onboarding) {
       return res.status(400).json({
@@ -109,6 +112,7 @@ export const submitAssessment = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Assessment submitted successfully",
+      goalId: onboarding._id,
     });
   } catch (error) {
     res.status(500).json({
@@ -122,7 +126,11 @@ export const submitAssessment = async (req, res) => {
 /* POST /api/onboarding/result */
 export const generateFinalResult = async (req, res) => {
   try {
-    const onboarding = await Onboarding.findOne({ user: req.user._id });
+    const goalId = req.body.goalId || req.query.goalId;
+    const query = goalId
+      ? { _id: goalId, user: req.user._id }
+      : { user: req.user._id };
+    const onboarding = await Onboarding.findOne(query).sort({ createdAt: -1 });
 
     if (!onboarding || !onboarding.assessmentAnswers) {
       return res.status(400).json({
@@ -182,6 +190,7 @@ export const generateFinalResult = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Final roadmap generated successfully",
+      goalId: onboarding._id,
       data: {
         resultAnalysis,
         finalRoadmap,
@@ -203,7 +212,11 @@ export const generateFinalResult = async (req, res) => {
 /* GET /api/onboarding/questions */
 export const generateQuestions = async (req, res) => {
   try {
-    const onboarding = await Onboarding.findOne({ user: req.user._id });
+    const goalId = req.query.goalId;
+    const query = goalId
+      ? { _id: goalId, user: req.user._id }
+      : { user: req.user._id };
+    const onboarding = await Onboarding.findOne(query).sort({ createdAt: -1 });
 
     if (!onboarding || !onboarding.goal) {
       return res.status(400).json({
@@ -220,6 +233,7 @@ export const generateQuestions = async (req, res) => {
     res.status(200).json({
       success: true,
       data: result.json,
+      goalId: onboarding._id,
     });
   } catch (error) {
     console.error("Question Generation Error:", error);
@@ -237,10 +251,14 @@ export const generateQuestions = async (req, res) => {
   }
 };
 
-/* GET /api/onboarding/data */
+/* GET /api/onboarding/data — single goal data */
 export const getUserOnboardingData = async (req, res) => {
   try {
-    const onboarding = await Onboarding.findOne({ user: req.user._id });
+    const goalId = req.query.goalId;
+    const query = goalId
+      ? { _id: goalId, user: req.user._id }
+      : { user: req.user._id };
+    const onboarding = await Onboarding.findOne(query).sort({ createdAt: -1 });
 
     if (!onboarding) {
       return res.status(404).json({
@@ -252,6 +270,7 @@ export const getUserOnboardingData = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
+        _id: onboarding._id,
         goal: onboarding.goal,
         experienceLevel: onboarding.experienceLevel,
         timeline: onboarding.timeline,
@@ -260,12 +279,223 @@ export const getUserOnboardingData = async (req, res) => {
         confidenceScore: onboarding.confidenceScore,
         confidenceHistory: onboarding.confidenceHistory,
         isCompleted: onboarding.isCompleted,
+        status: onboarding.status,
+        completedAt: onboarding.completedAt,
+        completedItems: onboarding.completedItems || [],
+        createdAt: onboarding.createdAt,
       },
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch onboarding data",
+      error: error.message,
+    });
+  }
+};
+
+/* GET /api/onboarding/goals — all goals for user */
+export const getAllGoals = async (req, res) => {
+  try {
+    const goals = await Onboarding.find({ user: req.user._id })
+      .select(
+        "_id goal experienceLevel status confidenceScore isCompleted completedAt createdAt updatedAt",
+      )
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: goals,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch goals",
+      error: error.message,
+    });
+  }
+};
+
+/* GET /api/onboarding/stats — aggregated dashboard stats */
+export const getDashboardStats = async (req, res) => {
+  try {
+    const goals = await Onboarding.find({ user: req.user._id }).lean();
+
+    const totalGoals = goals.length;
+    const completedGoals = goals.filter((g) => g.status === "completed").length;
+    const activeGoals = goals.filter((g) => g.status === "active").length;
+
+    // Collect all confidence history entries and total assessments
+    let allHistory = [];
+    let totalAssessments = 0;
+    let totalScore = 0;
+    let scoredAssessments = 0;
+
+    goals.forEach((g) => {
+      if (g.confidenceHistory && g.confidenceHistory.length > 0) {
+        totalAssessments += g.confidenceHistory.length;
+        g.confidenceHistory.forEach((entry) => {
+          allHistory.push({
+            score: entry.score,
+            date: entry.date,
+            goal: g.goal,
+          });
+          totalScore += entry.score;
+          scoredAssessments++;
+        });
+      }
+    });
+
+    // Sort combined history by date
+    allHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const averageScore =
+      scoredAssessments > 0 ? Math.round(totalScore / scoredAssessments) : 0;
+
+    // Calculate active streak (consecutive days with at least one assessment)
+    let activeStreak = 0;
+    if (allHistory.length > 0) {
+      const uniqueDays = [
+        ...new Set(
+          allHistory.map((h) => new Date(h.date).toISOString().split("T")[0]),
+        ),
+      ].sort((a, b) => new Date(b) - new Date(a)); // most recent first
+
+      const today = new Date().toISOString().split("T")[0];
+      const yesterday = new Date(Date.now() - 86400000)
+        .toISOString()
+        .split("T")[0];
+
+      // Streak must start from today or yesterday
+      if (uniqueDays[0] === today || uniqueDays[0] === yesterday) {
+        activeStreak = 1;
+        for (let i = 1; i < uniqueDays.length; i++) {
+          const prevDay = new Date(uniqueDays[i - 1]);
+          const currDay = new Date(uniqueDays[i]);
+          const diffMs = prevDay - currDay;
+          const diffDays = Math.round(diffMs / 86400000);
+          if (diffDays === 1) {
+            activeStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalGoals,
+        completedGoals,
+        activeGoals,
+        totalAssessments,
+        averageScore,
+        activeStreak,
+        combinedHistory: allHistory,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch dashboard stats",
+      error: error.message,
+    });
+  }
+};
+
+/* PATCH /api/onboarding/goal/:goalId/complete — toggle goal completion */
+export const toggleGoalComplete = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const onboarding = await Onboarding.findOne({
+      _id: goalId,
+      user: req.user._id,
+    });
+
+    if (!onboarding) {
+      return res.status(404).json({
+        success: false,
+        message: "Goal not found",
+      });
+    }
+
+    if (onboarding.status === "completed") {
+      // Re-activate
+      onboarding.status = "active";
+      onboarding.completedAt = null;
+    } else {
+      // Mark completed
+      onboarding.status = "completed";
+      onboarding.completedAt = new Date();
+    }
+
+    await onboarding.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Goal ${onboarding.status === "completed" ? "completed" : "reactivated"} successfully`,
+      data: {
+        _id: onboarding._id,
+        status: onboarding.status,
+        completedAt: onboarding.completedAt,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update goal status",
+      error: error.message,
+    });
+  }
+};
+
+/* PATCH /api/onboarding/goal/:goalId/roadmap-item — toggle a roadmap item */
+export const toggleRoadmapItem = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const { itemKey } = req.body;
+
+    if (!itemKey) {
+      return res.status(400).json({
+        success: false,
+        message: "itemKey is required",
+      });
+    }
+
+    const onboarding = await Onboarding.findOne({
+      _id: goalId,
+      user: req.user._id,
+    });
+
+    if (!onboarding) {
+      return res.status(404).json({
+        success: false,
+        message: "Goal not found",
+      });
+    }
+
+    const items = onboarding.completedItems || [];
+    const idx = items.indexOf(itemKey);
+
+    if (idx === -1) {
+      items.push(itemKey);
+    } else {
+      items.splice(idx, 1);
+    }
+
+    onboarding.completedItems = items;
+    await onboarding.save();
+
+    res.status(200).json({
+      success: true,
+      data: { completedItems: onboarding.completedItems },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to toggle roadmap item",
       error: error.message,
     });
   }

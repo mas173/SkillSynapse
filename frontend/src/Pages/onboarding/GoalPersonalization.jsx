@@ -27,40 +27,44 @@ export default function GoalPersonalization() {
   const languageOptions = ["English", "Hindi", "Spanish", "French"];
 
   async function handlePersonalize() {
-  if (!goal.trim()) {
-    setError("Please write your learning goal or description.");
-    return;
+    if (!goal.trim()) {
+      setError("Please write your learning goal or description.");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await axiosInstance.post("/onboarding/goal", {
+        goal,
+        preferredStyle: style,
+        timeline: timePerDay,
+        experienceLevel,
+        preferredLanguage,
+      });
+
+      const data = res.data;
+
+      // Store goalId for the rest of the onboarding flow
+      if (data.goalId) {
+        sessionStorage.setItem("currentGoalId", data.goalId);
+      }
+
+      console.log("AI Personalization Result:", data);
+      navigate("/onboarding/roadmap");
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || "AI personalization failed. Try again.";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   }
-
-  setError("");
-  setLoading(true);
-
-  try {
-    const res = await axiosInstance.post("/onboarding/goal", {
-      goal,
-      preferredStyle: style,
-      timeline: timePerDay,
-      experienceLevel,          
-      preferredLanguage,        
-    });
-
-    const data = res.data;
-
-    console.log("AI Personalization Result:", data);
-    navigate("/onboarding/roadmap");
-
-  } catch (err) {
-    const errorMessage = err.response?.data?.message || "AI personalization failed. Try again.";
-    setError(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white px-6">
       <div className="w-full mt-12 mb-12 max-w-2xl p-10 rounded-3xl bg-white/5 border border-white/10 shadow-xl backdrop-blur-md">
-
         <div className="flex items-center gap-3 mb-6">
           <Brain className="w-8 h-8 text-gray-200" />
           <div>
@@ -214,8 +218,8 @@ export default function GoalPersonalization() {
         </button>
 
         <p className="mt-6 text-xs text-gray-500 text-center">
-          Your answers help SkillSynapse provide explainable, confidence-boosting
-          AI tutoring.
+          Your answers help SkillSynapse provide explainable,
+          confidence-boosting AI tutoring.
         </p>
       </div>
     </div>

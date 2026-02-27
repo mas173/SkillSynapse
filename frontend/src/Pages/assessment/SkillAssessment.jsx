@@ -21,9 +21,17 @@ export default function SkillAssessment() {
     async function fetchQuestions() {
       try {
         setFetchingQuestions(true);
-        const res = await axiosInstance.get("/onboarding/questions");
+        const goalId = sessionStorage.getItem("currentGoalId");
+        const url = goalId
+          ? `/onboarding/questions?goalId=${goalId}`
+          : "/onboarding/questions";
+        const res = await axiosInstance.get(url);
         if (res.data.success && res.data.data?.questions) {
           setQuestions(res.data.data.questions);
+          // Store goalId if returned
+          if (res.data.goalId) {
+            sessionStorage.setItem("currentGoalId", res.data.goalId);
+          }
         } else {
           setError("Failed to load questions.");
         }
@@ -76,9 +84,11 @@ export default function SkillAssessment() {
     setLoading(true);
 
     try {
+      const goalId = sessionStorage.getItem("currentGoalId");
       // Submit assessment answers to backend
       await axiosInstance.post("/onboarding/assessment", {
         answers: finalAnswers,
+        goalId: goalId || undefined,
       });
 
       // Navigate to Skill Gap Report screen

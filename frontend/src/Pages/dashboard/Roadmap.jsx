@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Brain,
   Calendar,
@@ -14,11 +15,14 @@ import LoadingScreen from "../../Components/common/Loader";
 import axiosInstance from "../../services/axios/axios";
 
 export default function Roadmap() {
+  const [searchParams] = useSearchParams();
   const [roadmap, setRoadmap] = useState(null);
+  const [goalId, setGoalId] = useState(null);
   const [goal, setGoal] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openPhase, setOpenPhase] = useState(null);
+  const [completedItems, setCompletedItems] = useState([]);
 
   useEffect(() => {
     fetchRoadmap();
@@ -29,11 +33,16 @@ export default function Roadmap() {
       setLoading(true);
       setError("");
 
-      const res = await axiosInstance.get("/onboarding/data");
+      const gId =
+        searchParams.get("goalId") || sessionStorage.getItem("currentGoalId");
+      const url = gId ? `/onboarding/data?goalId=${gId}` : "/onboarding/data";
+      const res = await axiosInstance.get(url);
 
       if (res.data.success && res.data.data) {
         const data = res.data.data;
         setGoal(data.goal || "Personalized Learning");
+        setGoalId(data._id);
+        setCompletedItems(data.completedItems || []);
 
         const finalRoadmap = data.finalRoadmap?.json;
         if (finalRoadmap) {
@@ -46,6 +55,35 @@ export default function Roadmap() {
       setError(err?.response?.data?.message || "Failed to load roadmap.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleToggleItem(itemKey) {
+    if (!goalId) return;
+
+    // Optimistic update
+    setCompletedItems((prev) =>
+      prev.includes(itemKey)
+        ? prev.filter((k) => k !== itemKey)
+        : [...prev, itemKey],
+    );
+
+    try {
+      const res = await axiosInstance.patch(
+        `/onboarding/goal/${goalId}/roadmap-item`,
+        { itemKey },
+      );
+      if (res.data.success) {
+        setCompletedItems(res.data.data.completedItems);
+      }
+    } catch (err) {
+      // Revert on error
+      setCompletedItems((prev) =>
+        prev.includes(itemKey)
+          ? prev.filter((k) => k !== itemKey)
+          : [...prev, itemKey],
+      );
+      console.error("Failed to toggle item:", err);
     }
   }
 
@@ -74,6 +112,26 @@ export default function Roadmap() {
   const summary = roadmap.summary || "";
   const skillGapFocus = roadmap.skillGapFocus || [];
   const finalAdvice = roadmap.finalAdvice || "";
+
+  // Compute progress
+  let totalItems = 0;
+  let checkedItems = 0;
+  phases.forEach((phase, pi) => {
+    if (phase.projects) {
+      phase.projects.forEach((_, ii) => {
+        totalItems++;
+        if (completedItems.includes(`p-${pi}-${ii}`)) checkedItems++;
+      });
+    }
+    if (phase.resources) {
+      phase.resources.forEach((_, ii) => {
+        totalItems++;
+        if (completedItems.includes(`r-${pi}-${ii}`)) checkedItems++;
+      });
+    }
+  });
+  const progressPercent =
+    totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-zinc-900 to-neutral-950 text-white">
@@ -119,13 +177,15 @@ export default function Roadmap() {
         {/* Overall Progress */}
         <div className="mt-6">
           <div className="flex justify-between text-sm text-gray-400 mb-2">
-            <span>Phases Completed</span>
-            <span>0 / {phases.length}</span>
+            <span>Overall Progress</span>
+            <span>
+              {checkedItems} / {totalItems} items ({progressPercent}%)
+            </span>
           </div>
           <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
             <div
               className="h-full bg-gray-200 transition-all duration-500"
-              style={{ width: "0%" }}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
@@ -191,52 +251,88 @@ export default function Roadmap() {
                     </div>
                   )}
 
-                  {/* Projects */}
+                  {/* Projects — clickable checkboxes */}
                   {phase.projects && phase.projects.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
                         Projects
                       </p>
                       <div className="space-y-2">
-                        {phase.projects.map((project, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-3 p-3 rounded-2xl bg-black/20 border border-white/5"
-                          >
-                            <Circle
-                              className="text-gray-500 shrink-0"
-                              size={14}
-                            />
-                            <span className="text-sm text-gray-300">
-                              {project}
-                            </span>
-                          </div>
-                        ))}
+                        {phase.projects.map((project, i) => {
+                          const key = `p-${index}-${i}`;
+                          const done = completedItems.includes(key);
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => handleToggleItem(key)}
+                              className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
+                                done
+                                  ? "bg-white/10 border-green-500/30"
+                                  : "bg-black/20 border-white/5 hover:border-gray-400"
+                              }`}
+                            >
+                              {done ? (
+                                <CheckCircle
+                                  className="text-green-400 shrink-0"
+                                  size={18}
+                                />
+                              ) : (
+                                <Circle
+                                  className="text-gray-500 shrink-0"
+                                  size={18}
+                                />
+                              )}
+                              <span
+                                className={`text-sm ${done ? "text-gray-300 line-through" : "text-gray-300"}`}
+                              >
+                                {project}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
 
-                  {/* Resources */}
+                  {/* Resources — clickable checkboxes */}
                   {phase.resources && phase.resources.length > 0 && (
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
                         Resources
                       </p>
                       <div className="space-y-2">
-                        {phase.resources.map((resource, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center gap-3 p-3 rounded-2xl bg-black/20 border border-white/5"
-                          >
-                            <CheckCircle
-                              className="text-gray-500 shrink-0"
-                              size={14}
-                            />
-                            <span className="text-sm text-gray-300">
-                              {resource}
-                            </span>
-                          </div>
-                        ))}
+                        {phase.resources.map((resource, i) => {
+                          const key = `r-${index}-${i}`;
+                          const done = completedItems.includes(key);
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => handleToggleItem(key)}
+                              className={`w-full flex items-center gap-3 p-3 rounded-2xl border text-left transition ${
+                                done
+                                  ? "bg-white/10 border-green-500/30"
+                                  : "bg-black/20 border-white/5 hover:border-gray-400"
+                              }`}
+                            >
+                              {done ? (
+                                <CheckCircle
+                                  className="text-green-400 shrink-0"
+                                  size={18}
+                                />
+                              ) : (
+                                <Circle
+                                  className="text-gray-500 shrink-0"
+                                  size={18}
+                                />
+                              )}
+                              <span
+                                className={`text-sm ${done ? "text-gray-300 line-through" : "text-gray-300"}`}
+                              >
+                                {resource}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

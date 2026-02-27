@@ -6,7 +6,7 @@ const onboardingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
+      index: true,
     },
     goal: {
       type: String,
@@ -45,6 +45,19 @@ const onboardingSchema = new mongoose.Schema(
     isCompleted: {
       type: Boolean,
       default: false,
+    },
+    status: {
+      type: String,
+      enum: ["active", "completed"],
+      default: "active",
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
+    completedItems: {
+      type: [String],
+      default: [],
     },
   },
   { timestamps: true },

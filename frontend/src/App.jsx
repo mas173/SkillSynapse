@@ -9,6 +9,7 @@ import RoadmapPreview from "./Pages/onboarding/RoadmapPreview";
 import SkillAssessment from "./Pages/assessment/SkillAssessment";
 import SkillGapReport from "./Pages/assessment/SkillGapReport";
 import Dashboard from "./Pages/dashboard/Dashboard";
+import GoalDetail from "./Pages/dashboard/GoalDetail";
 import TutorChat from "./Pages/tutor/Chat";
 import Roadmap from "./Pages/dashboard/Roadmap";
 import ProtectedRoute from "./Components/common/ProtectedRoute";
@@ -116,6 +117,16 @@ function App() {
             <OnboardedRoute>
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            </OnboardedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/goal/:goalId"
+          element={
+            <OnboardedRoute>
+              <ProtectedRoute>
+                <GoalDetail />
               </ProtectedRoute>
             </OnboardedRoute>
           }
